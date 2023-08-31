@@ -1,0 +1,84 @@
+#include <SoftwareSerial.h>
+#include "Talkie.h"
+#include "Vocab_US_Large.h"
+#include "Vocab_Special.h"
+// initiliaztion of pins;
+SoftwareSerial sim900A(7, 8);  // RX, TX
+const int fsr=A0;
+const int push=9;
+const int led=12;
+//initialization of constants
+int accident; 
+Talkie voice; //speaker
+String phoneNumber = "+917025093487";
+//////////////////////////////ARDUINO CODE////////////////////
+
+
+void setup() {
+  pinMode(fsr,INPUT);
+  pinMode(push,INPUT);
+  pinMode(led,OUTPUT);
+  Serial.begin(9600); // Serial communication with the PC
+   sim900A.begin(9600); // Software serial communication with gsm
+}
+
+void loop() {
+    int data = analogRead(fsr);
+    Serial.print("fsr reading: ");
+    Serial.println(data);
+if(data>5){
+  digitalWrite(led,HIGH);
+  accident=1;
+  //  speaker(); // speaker code
+  //CODE FOR PUSH
+  for(int i=0;i<5;i=i+1){
+    
+    if(digitalRead(push)==1){
+      accident=0;
+      break;
+    }
+    speaker();
+    delay(1000);
+  }
+  Serial.println(accident);
+  if(accident==1){
+
+emergencysos();
+ }
+}
+ delay(2000);
+ digitalWrite(led,LOW);
+}
+void speaker(){
+  voice.say(spPAUSE2);
+  voice.say(sp2_R);
+  voice.say(sp2_U);
+  voice.say(sp2_O);
+  voice.say(sp2_K);
+}
+void emergencysos(){
+sim900A.println("AT");
+  delay(1000);
+  sim900A.println("AT+CMGF=1");  // Set SMS mode to text
+  delay(1000);
+  sim900A.println("AT+CNMI=2,2,0,0,0");  // Set module to send SMS data to serial out upon receipt
+  delay(1000);
+  String message = "!!!!!Accident Location- 10.178383,76.430935";
+  String smsCommand = "AT+CMGS=\"" + phoneNumber + "\"";
+  sim900A.println(smsCommand);
+  delay(1000);
+  sim900A.println(message);
+  delay(1000);
+  sim900A.println((char)26);
+  delay(1000);
+  sim900A.println("AT");
+  delay(1000);
+  sim900A.println("AT+CMGF=1");  // Set SMS mode to text
+  delay(1000);
+  sim900A.println("AT+CNMI=2,2,0,0,0");  // Set module to send SMS data to serial out upon receipt
+  delay(1000);
+  sim900A.println("ATD" + phoneNumber + ";");
+   delay(15000);
+   sim900A.println("ATH");
+   delay(2000);
+}
